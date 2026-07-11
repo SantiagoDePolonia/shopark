@@ -4,11 +4,11 @@
 export function LogoMark({ size = 30 }: { size?: number }) {
   return (
     <img
-      src="/brand-mark.jpeg"
+      src="/brand-mark.png"
       alt=""
       width={size}
       height={size}
-      className="rounded-md"
+      className="block"
       aria-hidden="true"
     />
   );
@@ -19,7 +19,7 @@ export function Wordmark({ onDark = false }: { onDark?: boolean }) {
     <span className="inline-flex items-center gap-2">
       <LogoMark />
       <span
-        className={`font-display text-xl font-semibold tracking-tight ${
+        className={`font-display text-xl font-semibold leading-none tracking-tight ${
           onDark ? "text-white" : "text-ink-900"
         }`}
       >

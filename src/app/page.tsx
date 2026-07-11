@@ -163,7 +163,7 @@ export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b border-foam-200 bg-white/80 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-2xl items-center justify-between px-5 py-3.5">
+        <div className="mx-auto flex w-full max-w-2xl items-center justify-between px-5 py-2.5">
           <button
             type="button"
             onClick={restart}

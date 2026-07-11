@@ -25,7 +25,7 @@ const BASE = "https://api.dataforseo.com/v3/merchant/google/products";
 const POLL_INTERVAL_MS = 1_500;
 // Keep the whole search snappy: a task that misses this window fails
 // gracefully and the other providers carry the result.
-const TASK_BUDGET_MS = 18_000;
+const TASK_BUDGET_MS = 25_000;
 
 function apiKey(): string | undefined {
   return process.env.DATAFORSEO_API_KEY_BASE64;
@@ -170,6 +170,17 @@ function isTaskPending(statusCode: number | undefined): boolean {
   return statusCode === 40601 || statusCode === 40602 || statusCode === 40100 || statusCode === 40102;
 }
 
+/**
+ * Tasks keep processing on DataForSEO's side even after we stop waiting.
+ * Remember recent task ids per keyword so a retry polls the task that is
+ * already cooking instead of starting a new one from zero.
+ */
+const globalTasks = globalThis as unknown as {
+  __dfsTasks?: Map<string, { taskId: string; postedAt: number }>;
+};
+const taskCache = (globalTasks.__dfsTasks ??= new Map());
+const TASK_CACHE_TTL_MS = 10 * 60_000;
+
 export const dataForSeoProvider: ShoppingProvider = {
   id: "google_shopping_dataforseo",
   timeoutMs: TASK_BUDGET_MS + 2_000,
@@ -187,32 +198,44 @@ export const dataForSeoProvider: ShoppingProvider = {
     if (!key) return fail("DataForSEO key not configured");
 
     const locationCode = targetingFor(intent.location.country).dataForSeoLocationCode;
+    const keyword = intent.localizedQuery ?? intent.searchQuery ?? intent.query;
+    const cacheKey = `${keyword}::${locationCode}`;
 
-    // 1. Create the task at high priority.
-    const posted = await dfsFetch(key, `${BASE}/task_post`, [
-      {
-        keyword: intent.localizedQuery ?? intent.searchQuery ?? intent.query,
-        location_code: locationCode,
-        language_code: "en",
-        depth: 20,
-        priority: 2,
-      },
-    ]);
-    const postedTask = posted.tasks?.[0] as { id?: string; status_code?: number; status_message?: string } | undefined;
-    if (!postedTask?.id || (postedTask.status_code && postedTask.status_code >= 40000)) {
-      return fail(`DataForSEO task_post: ${postedTask?.status_message ?? posted.status_message ?? "no task id"}`);
+    const cached = taskCache.get(cacheKey);
+    let taskId: string;
+    if (cached && Date.now() - cached.postedAt < TASK_CACHE_TTL_MS) {
+      // A previous attempt already posted this task; just poll it.
+      taskId = cached.taskId;
+    } else {
+      // 1. Create the task at high priority.
+      const posted = await dfsFetch(key, `${BASE}/task_post`, [
+        {
+          keyword,
+          location_code: locationCode,
+          language_code: "en",
+          depth: 20,
+          priority: 2,
+        },
+      ]);
+      const postedTask = posted.tasks?.[0] as { id?: string; status_code?: number; status_message?: string } | undefined;
+      if (!postedTask?.id || (postedTask.status_code && postedTask.status_code >= 40000)) {
+        return fail(`DataForSEO task_post: ${postedTask?.status_message ?? posted.status_message ?? "no task id"}`);
+      }
+      taskId = postedTask.id;
+      taskCache.set(cacheKey, { taskId, postedAt: Date.now() });
     }
 
     // 2. Poll until the task completes or the budget runs out.
     while (Date.now() - started < TASK_BUDGET_MS) {
       await sleep(POLL_INTERVAL_MS);
-      const polled = await dfsFetch(key, `${BASE}/task_get/advanced/${postedTask.id}`);
+      const polled = await dfsFetch(key, `${BASE}/task_get/advanced/${taskId}`);
       const task = polled.tasks?.[0];
       if (task?.status_code === 20000) {
         const { offers, error } = parseDfsResponse(polled, intent);
         return { providerId: "google_shopping_dataforseo", offers, error, durationMs: Date.now() - started };
       }
       if (task && !isTaskPending(task.status_code)) {
+        taskCache.delete(cacheKey);
         return fail(`DataForSEO task: ${task.status_message ?? `status ${task.status_code}`}`);
       }
     }

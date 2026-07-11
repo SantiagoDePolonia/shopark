@@ -163,8 +163,12 @@ function buildSummary(
   if (!winner) {
     if (closestAboveBudget && intent.budget) {
       const total = computeTotal(closestAboveBudget);
-      const totalText = total !== undefined ? formatMoney(total, closestAboveBudget.pricing.currency) : "an unknown total";
-      return `No matching verified offer was found below ${formatMoney(intent.budget.maximum, intent.budget.currency)}. The closest valid match costs ${totalText} delivered.`;
+      const currency = closestAboveBudget.pricing.currency;
+      const totalText =
+        total !== undefined
+          ? `${formatMoney(total, currency)} delivered`
+          : `${formatMoney(closestAboveBudget.pricing.discoveredPrice, currency)} plus delivery`;
+      return `No matching verified offer was found below ${formatMoney(intent.budget.maximum, intent.budget.currency)}. The closest valid match costs ${totalText}.`;
     }
     return "No matching offer was found for this request.";
   }

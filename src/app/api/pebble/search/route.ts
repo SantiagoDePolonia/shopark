@@ -55,11 +55,18 @@ export async function POST(request: Request) {
     const resultUrl = `${proto}://${host}/r/${result.searchId}?q=${query}`;
 
     if (!winner) {
+      // Show the closest valid match on the watch instead of a dead end.
+      const closest = result.closestAboveBudget;
+      const closestTotal = closest ? computeTotal(closest) : undefined;
       return NextResponse.json({
         found: false,
-        title: "",
-        price: "",
-        merchant: "",
+        title: closest ? closest.product.title.slice(0, 48) : "",
+        price: closest
+          ? closestTotal !== undefined
+            ? formatMoney(closestTotal, closest.pricing.currency)
+            : `${formatMoney(closest.pricing.discoveredPrice, closest.pricing.currency)}+ship`
+          : "",
+        merchant: closest ? closest.merchant.name.slice(0, 24) : "",
         verified: 0,
         resultUrl,
         spoken: result.summary,

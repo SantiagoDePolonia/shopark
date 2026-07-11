@@ -18,11 +18,13 @@ export type IntentParseOutcome = {
 const SYSTEM_PROMPT = `You convert a shopping request into structured JSON.
 Extract only facts stated by the user; never invent attributes.
 Also produce:
-- "searchQuery": clean product search keywords in English — spell number
-  words as digits ("iphone sixteen" -> "iphone 16"), drop filler/politeness,
-  keep brand, model, key attributes.
-- "localizedQuery": the same keywords translated to Polish (the target
-  market), e.g. "sunglasses" -> "okulary przeciwsloneczne".
+- "searchQuery": ONLY the product keywords in English — spell number
+  words as digits ("iphone sixteen" -> "iphone 16"), drop filler,
+  politeness, and ALL budget/price words ("bicycle under 1000 PLN" ->
+  "bicycle"). Keep brand, model, key attributes.
+- "localizedQuery": the same product keywords translated to Polish (the
+  target market), e.g. "sunglasses" -> "okulary przeciwsloneczne".
+  Never include prices or budget words here either.
 Set "clarification" to ONE short question ONLY if a missing detail could
 materially change the result (size for shoes/clothing, budget currency,
 whether the budget includes delivery, new vs used, storage capacity).
@@ -129,6 +131,11 @@ export async function parseIntent(text: string, priorContext?: string): Promise<
       budget: raw.budget ?? undefined,
       location: { country: "PL" },
     });
+
+    // Safety net: budgets must never be lost to model nondeterminism.
+    if (!intent.budget) {
+      intent.budget = parseIntentHeuristically(text).budget;
+    }
 
     return {
       intent,

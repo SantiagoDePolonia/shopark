@@ -38,8 +38,17 @@ export function normalizeSearchQuery(text: string): string {
     .trim();
 }
 
+/** "one thousand" → "1000", "five hundred" → "500" for budget parsing. */
+export function normalizeNumbers(text: string): string {
+  let out = normalizeSearchQuery(text);
+  out = out.replace(/\b(\d+)\s+thousand\b/g, (_, n) => String(Number(n) * 1000));
+  out = out.replace(/\b(\d+)\s+hundred\b/g, (_, n) => String(Number(n) * 100));
+  out = out.replace(/\bthousand\b/g, "1000").replace(/\bhundred\b/g, "100");
+  return out;
+}
+
 export function parseIntentHeuristically(text: string): ShoppingIntent {
-  const lower = text.toLowerCase();
+  const lower = normalizeNumbers(text.toLowerCase());
 
   const budgetMatch = lower.match(
     /(?:under|below|up to|max|maximum|for up to|less than|no more than)\s*(\d+(?:[.,]\d+)?)\s*(pln|zł|eur|€|usd|\$)?/i,

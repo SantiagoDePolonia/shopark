@@ -87,8 +87,8 @@ export function findSizeInTitle(title: string): string | undefined {
 export function cleanQuery(query: string): string {
   return query
     .toLowerCase()
-    .replace(/\b(find me|find|please|looking for|i want|i need)\b/g, " ")
-    .replace(/\b(under|below|up to|max|maximum|less than|no more than|for)\s*\d+[\d.,]*\s*(pln|zł|eur|€|usd|\$)?/g, " ")
+    .replace(/\b(find me|find|search for|search|please|looking for|i want|i need|order|buy)\b/g, " ")
+    .replace(/\b(under|below|up to|max|maximum|less than|no more than|for|do|za|poniżej|pod)\s*\d+[\d.,]*\s*(pln|zł|zl|eur|€|usd|\$)?/g, " ")
     .replace(/\b\d+[\d.,]*\s*(pln|zł|eur|€|usd|\$)\b/g, " ")
     .replace(/\b(size|rozmiar)\s*\d+(?:[.,]5)?\b/g, " ")
     .replace(/\b(including|incl|with)?\s*(delivery|shipping|delivered)\b/g, " ")

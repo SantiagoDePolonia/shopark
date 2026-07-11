@@ -61,10 +61,11 @@ function verificationRank(offer: Offer): number {
   }
 }
 
-/** Sort key: known-total offers by total, unknown-shipping by lower bound. */
+/** Sort key: known totals as-is; unknown shipping gets a conservative estimate. */
 function effectiveTotalMinor(offer: Offer): number {
   const total = computeTotal(offer);
-  return toMinor(total ?? lowerBoundTotal(offer));
+  if (total !== undefined) return toMinor(total);
+  return toMinor(lowerBoundTotal(offer)) + UNKNOWN_SHIPPING_ESTIMATE_MINOR;
 }
 
 export function compareOffers(a: Offer, b: Offer): number {

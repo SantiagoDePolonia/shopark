@@ -164,6 +164,8 @@ export type ProviderSearchResult = {
 
 export interface ShoppingProvider {
   id: string;
+  /** Per-provider override of the default search timeout. */
+  timeoutMs?: number;
   search(intent: ShoppingIntent, context: SearchContext): Promise<ProviderSearchResult>;
 }
 

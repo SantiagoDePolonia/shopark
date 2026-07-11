@@ -1,26 +1,113 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ------------------------------------------------------------------ */
+/* ShopArk design tokens — the single place the identity lives.        */
+/* ------------------------------------------------------------------ */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@theme {
+  /* Ocean — primary brand */
+  --color-ocean-950: #000000;
+  --color-ocean-900: #1d1d1f;
+  --color-ocean-800: #2d2d2f;
+  --color-ocean-700: #424245;
+  --color-ocean-600: #515154;
+  --color-ocean-300: #86868b;
+  --color-ocean-100: #e8e8ed;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Coral — key actions */
+  --color-coral-600: #000000;
+  --color-coral-500: #1d1d1f;
+  --color-coral-400: #48484c;
+  --color-coral-100: #f0f0f2;
+
+  /* Foam — surfaces */
+  --color-foam-50: #ffffff;
+  --color-foam-100: #f5f5f7;
+  --color-foam-200: #e8e8ed;
+
+  /* Ink — text on light */
+  --color-ink-900: #1d1d1f;
+  --color-ink-600: #6e6e73;
+  --color-ink-400: #86868b;
+
+  /* Semantic states */
+  --color-verified-600: #248a3d;
+  --color-verified-100: #e9f6ee;
+  --color-caution-700: #8a6a10;
+  --color-caution-500: #c98d1e;
+  --color-caution-100: #f9f1de;
+  --color-danger-600: #d70015;
+  --color-danger-100: #fdecee;
+
+  /* Typography */
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, system-ui, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, system-ui, sans-serif;
+
+  /* Shape & depth */
+  --radius-card: 1.25rem;
+  --radius-control: 0.875rem;
+  --shadow-card: 0 0 0 1px rgb(0 0 0 / 0.04), 0 1px 3px rgb(0 0 0 / 0.06);
+  --shadow-hero: 0 0 0 1px rgb(0 0 0 / 0.05), 0 12px 32px -12px rgb(0 0 0 / 0.16);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-foam-50);
+  color: var(--color-ink-900);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Prices always align digit-for-digit. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------------ */
+/* Signature motion: the hull arc + gliding dot                        */
+/* ------------------------------------------------------------------ */
+
+@keyframes ripple {
+  0% { transform: scale(1); opacity: 0.45; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+
+.listening-ripple {
+  animation: ripple 1.6s ease-out infinite;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.rise-in {
+  animation: rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes drawCheck {
+  from { stroke-dashoffset: 24; }
+  to { stroke-dashoffset: 0; }
+}
+
+.draw-check {
+  stroke-dasharray: 24;
+  animation: drawCheck 0.5s ease-out 0.15s both;
+}
+
+@keyframes waveShift {
+  from { transform: translateX(0); }
+  to { transform: translateX(-72px); }
+}
+
+.wave-shift {
+  animation: waveShift 1.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .listening-ripple,
+  .rise-in,
+  .draw-check,
+  .wave-shift {
+    animation: none;
+  }
 }

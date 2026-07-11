@@ -64,6 +64,37 @@ function titleContainsColor(offer: Offer, color: string): boolean {
   return normalizeToken(offer.product.title).includes(normalizeToken(color));
 }
 
+/** Find a shoe/clothing size embedded in a listing title. */
+export function findSizeInTitle(title: string): string | undefined {
+  const patterns = [
+    /(?:size|rozmiar|roz\.?|eu)\s*:?\s*(\d{2}(?:[.,]5)?)\b/i,
+    /[\/|]\s*(\d{2}(?:[.,]5)?)\s*[\/|]/,
+    /\b(\d{2}(?:[.,]5)?)\s*eu\b/i,
+  ];
+  for (const pattern of patterns) {
+    const m = title.match(pattern);
+    if (m) return m[1].replace(",", ".");
+  }
+  return undefined;
+}
+
+/**
+ * Strip constraint phrasing (budget, size, delivery, filler) so title
+ * similarity compares product words, not the request's grammar.
+ */
+export function cleanQuery(query: string): string {
+  return query
+    .toLowerCase()
+    .replace(/\b(find me|find|please|looking for|i want|i need)\b/g, " ")
+    .replace(/\b(under|below|up to|max|maximum|less than|no more than|for)\s*\d+[\d.,]*\s*(pln|zł|eur|€|usd|\$)?/g, " ")
+    .replace(/\b\d+[\d.,]*\s*(pln|zł|eur|€|usd|\$)\b/g, " ")
+    .replace(/\b(size|rozmiar)\s*\d+(?:[.,]5)?\b/g, " ")
+    .replace(/\b(including|incl|with)?\s*(delivery|shipping|delivered)\b/g, " ")
+    .replace(/\b(a|an|the|for|in|me|of)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 /** Cheap lexical similarity between the request and an offer title. */
 export function titleSimilarity(query: string, title: string): number {
   const queryTokens = new Set(normalizeToken(query).split(" ").filter(Boolean));
@@ -76,6 +107,7 @@ export function titleSimilarity(query: string, title: string): number {
 
 export function matchOffer(intent: ShoppingIntent, offer: Offer): MatchResult {
   const reasons: string[] = [];
+  let satisfiedCritical = 0;
 
   /* ---- critical attributes: hard rejections first ---- */
 
@@ -89,11 +121,13 @@ export function matchOffer(intent: ShoppingIntent, offer: Offer): MatchResult {
       };
     }
     reasons.push(`Condition is ${wantedCondition}`);
+    satisfiedCritical++;
   }
 
+  let sizeUnconfirmed = false;
   const wantedSize = intentAttr(intent, SIZE_KEYS);
   if (wantedSize) {
-    const offerSize = offerAttr(offer, SIZE_KEYS);
+    const offerSize = offerAttr(offer, SIZE_KEYS) ?? findSizeInTitle(offer.product.title);
     if (offerSize && normalizeSize(offerSize) !== normalizeSize(wantedSize)) {
       return {
         score: 0,
@@ -101,7 +135,14 @@ export function matchOffer(intent: ShoppingIntent, offer: Offer): MatchResult {
         rejectionReason: `Size ${offerSize} does not match requested size ${wantedSize}`,
       };
     }
-    if (offerSize) reasons.push(`Size ${wantedSize} is available`);
+    if (offerSize) {
+      reasons.push(`Size ${wantedSize} is available`);
+      satisfiedCritical++;
+    } else {
+      // A critical size must match explicitly; with no size evidence the
+      // offer cannot compete for the win.
+      sizeUnconfirmed = true;
+    }
   }
 
   const wantedCapacity = intentAttr(intent, CAPACITY_KEYS);
@@ -114,7 +155,10 @@ export function matchOffer(intent: ShoppingIntent, offer: Offer): MatchResult {
         rejectionReason: `Capacity ${offerCapacity} does not match requested ${wantedCapacity}`,
       };
     }
-    if (offerCapacity) reasons.push(`Capacity ${wantedCapacity} matches`);
+    if (offerCapacity) {
+      reasons.push(`Capacity ${wantedCapacity} matches`);
+      satisfiedCritical++;
+    }
   }
 
   const wantedColor = intent.attributes.color;
@@ -131,7 +175,10 @@ export function matchOffer(intent: ShoppingIntent, offer: Offer): MatchResult {
         rejectionReason: `Color is ${offerColor}, requested ${wantedColor}`,
       };
     }
-    if (colorMatches) reasons.push(`Requested color matches`);
+    if (colorMatches) {
+      reasons.push(`Requested color matches`);
+      satisfiedCritical++;
+    }
   }
 
   const wantedGender = intent.attributes.gender;
@@ -169,17 +216,31 @@ export function matchOffer(intent: ShoppingIntent, offer: Offer): MatchResult {
     }
   }
 
-  const similarity = titleSimilarity(intent.query, offer.product.title);
-  score += similarity * 0.45;
+  const cleaned = cleanQuery(intent.query) || intent.query;
+  const similarity = titleSimilarity(cleaned, offer.product.title);
+  score += similarity * 0.4;
+  score += Math.min(satisfiedCritical, 4) * 0.12;
+  if (sizeUnconfirmed) score -= 0.3;
   if (similarity >= 0.6) reasons.push("Title closely matches the request");
 
-  if (
-    intent.productCategory &&
-    offer.product.category &&
-    normalizeToken(offer.product.category).includes(normalizeToken(intent.productCategory))
-  ) {
-    score += 0.15;
-    reasons.push("Category matches");
+  if (intent.productCategory) {
+    const categoryMatches =
+      offer.product.category &&
+      normalizeToken(offer.product.category).includes(normalizeToken(intent.productCategory));
+    if (categoryMatches) {
+      score += 0.15;
+      reasons.push("Category matches");
+    } else {
+      // No category evidence at all: require the category's defining words
+      // in the title, otherwise treat the offer as off-category noise.
+      const categoryTokens = normalizeToken(intent.productCategory)
+        .split(" ")
+        .filter((t) => t.length > 2);
+      const titleNorm = normalizeToken(offer.product.title);
+      const inTitle =
+        categoryTokens.length > 0 && categoryTokens.every((t) => titleNorm.includes(t));
+      if (!inTitle && !offer.product.category) score -= 0.15;
+    }
   }
 
   score = Math.max(0, Math.min(1, score));

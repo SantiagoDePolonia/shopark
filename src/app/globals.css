@@ -96,18 +96,36 @@ body {
 
 @keyframes waveShift {
   from { transform: translateX(0); }
-  to { transform: translateX(-72px); }
+  to { transform: translateX(-90px); }
 }
 
 .wave-shift {
-  animation: waveShift 1.4s linear infinite;
+  animation: waveShift 1.6s linear infinite;
+}
+
+.wave-shift-slow {
+  animation: waveShift 2.6s linear infinite;
+}
+
+/* The ship rocks with the swell: rise on the crest, dip in the trough. */
+@keyframes shipBob {
+  0%   { transform: translateY(0) rotate(-2.5deg); }
+  50%  { transform: translateY(-4px) rotate(3deg); }
+  100% { transform: translateY(0) rotate(-2.5deg); }
+}
+
+.ship-bob {
+  animation: shipBob 1.6s ease-in-out infinite;
+  transform-origin: 50% 90%;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .listening-ripple,
   .rise-in,
   .draw-check,
-  .wave-shift {
+  .wave-shift,
+  .wave-shift-slow,
+  .ship-bob {
     animation: none;
   }
 }

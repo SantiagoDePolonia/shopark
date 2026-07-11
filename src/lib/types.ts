@@ -199,6 +199,8 @@ export type SearchResult = {
   similarAlternatives: Offer[];
   rejected: Offer[];
   providerErrors: string[];
+  /** false when results come from the liberal closest-match fallback */
+  exactMatch: boolean;
   summary: string;
   /** set when nothing fits the budget: the closest valid match */
   closestAboveBudget?: Offer | null;

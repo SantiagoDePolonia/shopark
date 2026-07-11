@@ -10,7 +10,7 @@ import { isIP } from "node:net";
 
 const MAX_REDIRECTS = 4;
 const MAX_RESPONSE_BYTES = 2_000_000;
-const FETCH_TIMEOUT_MS = 8_000;
+const FETCH_TIMEOUT_MS = 5_000;
 
 const USER_AGENT =
   "Mozilla/5.0 (compatible; ShopArkVerifier/1.0; +https://shopark.local/verifier)";

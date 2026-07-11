@@ -83,9 +83,11 @@ export async function executeSearch(
   // Liberal fallback: an empty result helps nobody. When nothing clears
   // the strict threshold, surface the closest non-rejected candidates —
   // hard rejections (wrong size, wrong condition…) stay rejected.
+  let exactMatch = true;
   if (matched.length === 0 && nearMisses.length > 0) {
     nearMisses.sort((a, b) => b.match.score - a.match.score);
     matched = nearMisses.slice(0, 10);
+    exactMatch = false;
     report("No exact matches — showing the closest offers…");
   }
 
@@ -100,7 +102,7 @@ export async function executeSearch(
   // Verify in rounds: a changed price can push the winner down and pull
   // unverified candidates up, so re-verify until the top is inspected.
   let pool = outcome.ranked;
-  for (let round = 0; round < 3; round++) {
+  for (let round = 0; round < 2; round++) {
     const pendingOnTop = pool.slice(0, VERIFY_TOP_N).some((o) => o.verification.status === "pending");
     if (!pendingOnTop) break;
     report(
@@ -145,7 +147,10 @@ export async function executeSearch(
     similarAlternatives: taggedSimilar.slice(0, 5),
     rejected: allRejected.slice(0, 10),
     providerErrors,
-    summary: buildSummary(intent, taggedWinner, taggedSame, outcome.closestAboveBudget),
+    exactMatch,
+    summary:
+      (exactMatch ? "" : "These are the closest offers we found — not every requirement could be matched exactly. ") +
+      buildSummary(intent, taggedWinner, taggedSame, outcome.closestAboveBudget),
     closestAboveBudget: outcome.closestAboveBudget,
   };
 

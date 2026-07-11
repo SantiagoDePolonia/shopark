@@ -88,6 +88,7 @@ export async function POST(request: Request) {
       price,
       merchant: winner.merchant.name.slice(0, 24),
       verified: isVerified ? 1 : 0,
+      approx: result.exactMatch ? 0 : 1,
       resultUrl,
       spoken: result.summary,
     }, { headers: CORS_HEADERS });

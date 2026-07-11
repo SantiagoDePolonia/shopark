@@ -419,6 +419,11 @@ function ResultView({ result, onRestart }: { result: SearchResult; onRestart: ()
 
   return (
     <div className="pt-8">
+      {!result.exactMatch && (
+        <p className="rise-in mb-4 rounded-xl bg-caution-100 px-4 py-3 text-sm text-caution-700">
+          These are the closest offers we found — not every requirement could be matched exactly.
+        </p>
+      )}
       <WinnerCard offer={winner} runnerUpTotal={runnerUpTotal} onRestart={onRestart} />
       <AlternativesList
         sameProduct={result.sameProductAlternatives}

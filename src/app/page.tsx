@@ -235,7 +235,7 @@ export default function Home() {
               <br />
               for today?
             </h1>
-            <div className="mt-10">
+            <div className="mt-10 flex flex-col items-center">
               <MicButton state={micState} onClick={handleMic} />
               <p className="mt-3 text-sm text-ink-400">
                 {micState === "listening"

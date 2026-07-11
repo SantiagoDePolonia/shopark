@@ -191,10 +191,6 @@ export default function Home() {
               <br />
               for today?
             </h1>
-            <p className="mt-4 max-w-md text-base text-ink-600">
-              Tell ShopArk what you need. We&apos;ll compare offers and verify the best one.
-            </p>
-
             <div className="mt-10">
               <MicButton state={micState} onClick={handleMic} />
               <p className="mt-3 text-sm text-ink-400">

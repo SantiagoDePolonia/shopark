@@ -1,4 +1,5 @@
 import { parsePrice } from "../money";
+import { isTrustedMerchant, targetingFor } from "./geo";
 import type {
   Offer,
   ProviderSearchResult,
@@ -78,6 +79,7 @@ function toOffer(result: SerpShoppingResult, intent: ShoppingIntent, index: numb
       name: result.source ?? "Unknown merchant",
       rating: result.rating,
       reviewCount: result.reviews,
+      trusted: result.source ? isTrustedMerchant(result.source) : undefined,
     },
     product: {
       title: result.title,
@@ -114,14 +116,17 @@ export const serpApiProvider: ShoppingProvider = {
       };
     }
 
+    const targeting = targetingFor(intent.location.country);
     const params = new URLSearchParams({
       engine: "google_shopping",
       q: buildQuery(intent),
-      gl: intent.location.country.toLowerCase() === "pl" ? "pl" : intent.location.country.toLowerCase(),
+      gl: targeting.gl,
+      google_domain: targeting.googleDomain,
       hl: "en",
       num: "40",
       api_key: key,
     });
+    if (targeting.location) params.set("location", targeting.location);
 
     const response = await fetch(`https://serpapi.com/search?${params}`, {
       signal: context.signal ?? AbortSignal.timeout(context.timeoutMs),

@@ -1,4 +1,5 @@
 import { findSizeInTitle } from "../matching";
+import { isTrustedMerchant, targetingFor } from "./geo";
 import type {
   Offer,
   ProviderSearchResult,
@@ -25,14 +26,6 @@ const POLL_INTERVAL_MS = 1_500;
 // Keep the whole search snappy: a task that misses this window fails
 // gracefully and the other providers carry the result.
 const TASK_BUDGET_MS = 8_000;
-
-/** DataForSEO location codes for the countries the demo targets. */
-const LOCATION_CODES: Record<string, number> = {
-  PL: 2616,
-  DE: 2276,
-  US: 2840,
-  GB: 2826,
-};
 
 function apiKey(): string | undefined {
   return process.env.DATAFORSEO_API_KEY_BASE64;
@@ -114,6 +107,7 @@ export function dfsItemToOffer(item: DfsItem, intent: ShoppingIntent, index: num
       name: item.seller ?? "Unknown merchant",
       rating: rating?.value,
       reviewCount: rating?.votes_count,
+      trusted: item.seller ? isTrustedMerchant(item.seller) : undefined,
     },
     product: {
       title: item.title,
@@ -191,7 +185,7 @@ export const dataForSeoProvider: ShoppingProvider = {
     const key = apiKey();
     if (!key) return fail("DataForSEO key not configured");
 
-    const locationCode = LOCATION_CODES[intent.location.country.toUpperCase()] ?? LOCATION_CODES.PL;
+    const locationCode = targetingFor(intent.location.country).dataForSeoLocationCode;
 
     // 1. Create the task at high priority.
     const posted = await dfsFetch(key, `${BASE}/task_post`, [

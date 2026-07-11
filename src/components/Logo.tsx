@@ -1,24 +1,23 @@
-/** The ShopArk mark: a hull cradling one dot — one trusted choice carried forward. */
-export function LogoMark({ size = 26, onDark = false }: { size?: number; onDark?: boolean }) {
-  const color = onDark ? "#ffffff" : "#1d1d1f";
+/* eslint-disable @next/next/no-img-element */
+
+/** The ShopArk mark: a ship's prow, carrying the choice forward. */
+export function LogoMark({ size = 30 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true">
-      <path
-        d="M12 30c2.4 11.4 10 18 20 18s17.6-6.6 20-18"
-        fill="none"
-        stroke={color}
-        strokeWidth="5.5"
-        strokeLinecap="round"
-      />
-      <circle cx="32" cy="26" r="7.5" fill={color} />
-    </svg>
+    <img
+      src="/brand-mark.jpeg"
+      alt=""
+      width={size}
+      height={size}
+      className="rounded-md"
+      aria-hidden="true"
+    />
   );
 }
 
 export function Wordmark({ onDark = false }: { onDark?: boolean }) {
   return (
-    <span className="inline-flex items-center gap-2.5">
-      <LogoMark onDark={onDark} />
+    <span className="inline-flex items-center gap-2">
+      <LogoMark />
       <span
         className={`font-display text-xl font-semibold tracking-tight ${
           onDark ? "text-white" : "text-ink-900"

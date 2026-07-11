@@ -25,7 +25,7 @@ const BASE = "https://api.dataforseo.com/v3/merchant/google/products";
 const POLL_INTERVAL_MS = 1_500;
 // Keep the whole search snappy: a task that misses this window fails
 // gracefully and the other providers carry the result.
-const TASK_BUDGET_MS = 14_000;
+const TASK_BUDGET_MS = 18_000;
 
 function apiKey(): string | undefined {
   return process.env.DATAFORSEO_API_KEY_BASE64;
@@ -194,7 +194,7 @@ export const dataForSeoProvider: ShoppingProvider = {
         keyword: intent.localizedQuery ?? intent.searchQuery ?? intent.query,
         location_code: locationCode,
         language_code: "en",
-        depth: 40,
+        depth: 20,
         priority: 2,
       },
     ]);

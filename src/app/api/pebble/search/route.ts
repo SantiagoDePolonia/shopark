@@ -15,10 +15,24 @@ const BodySchema = z.object({
   text: z.string().min(1).max(500),
 });
 
+/**
+ * PebbleKit JS on iOS runs in a WebView that enforces CORS, so the
+ * watch bridge needs both preflight support and permissive headers.
+ */
+const CORS_HEADERS = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-methods": "POST, OPTIONS",
+  "access-control-allow-headers": "content-type",
+};
+
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+}
+
 export async function POST(request: Request) {
   const body = BodySchema.safeParse(await request.json().catch(() => null));
   if (!body.success) {
-    return NextResponse.json({ error: "Provide { text: string }" }, { status: 400 });
+    return NextResponse.json({ error: "Provide { text: string }" }, { status: 400, headers: CORS_HEADERS });
   }
 
   try {
@@ -42,7 +56,7 @@ export async function POST(request: Request) {
         verified: 0,
         resultUrl,
         spoken: result.summary,
-      });
+      }, { headers: CORS_HEADERS });
     }
 
     const total = computeTotal(winner);
@@ -62,9 +76,9 @@ export async function POST(request: Request) {
       verified: isVerified ? 1 : 0,
       resultUrl,
       spoken: result.summary,
-    });
+    }, { headers: CORS_HEADERS });
   } catch (error) {
     console.error("Pebble search failed", error);
-    return NextResponse.json({ error: "Search failed" }, { status: 500 });
+    return NextResponse.json({ error: "Search failed" }, { status: 500, headers: CORS_HEADERS });
   }
 }

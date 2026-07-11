@@ -41,6 +41,8 @@ type DfsPrice = number | { current?: number; regular?: number; currency?: string
 
 type DfsItem = {
   type?: string;
+  /** Google product-cluster id (same space as catalogid/gpcid) */
+  gid?: string;
   title?: string;
   description?: string;
   seller?: string;
@@ -95,7 +97,7 @@ export function dfsItemToOffer(item: DfsItem, intent: ShoppingIntent, index: num
   if (price === undefined || !item.title) return null;
   const rawUrl = item.url || item.shopping_url;
   if (!rawUrl) return null;
-  const url = safeOfferUrl(rawUrl, item.title, item.seller, item.product_id);
+  const url = safeOfferUrl(rawUrl, item.title, item.seller, item.gid);
 
   const rating = item.product_rating ?? item.rating ?? undefined;
   const titleSize = findSizeInTitle(item.title);

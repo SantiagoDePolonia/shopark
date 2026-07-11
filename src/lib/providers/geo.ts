@@ -63,7 +63,7 @@ export function safeOfferUrl(
       isGoogle && (url.searchParams.has("prds") || url.searchParams.has("ibp"));
     if (!isFragileDeepLink) return rawUrl;
 
-    const catalogId = productId ?? rawUrl.match(/catalogid:(\d+)/)?.[1];
+    const catalogId = productId ?? rawUrl.match(/(?:catalogid|gpcid):(\d+)/)?.[1];
     if (catalogId && /^\d+$/.test(catalogId)) {
       return `https://www.google.com/shopping/product/${catalogId}?gl=pl&hl=en`;
     }

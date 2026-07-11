@@ -8,10 +8,10 @@ export function buildConfirmation(intent: ShoppingIntent): string {
   if (intent.attributes.condition) bits.push(intent.attributes.condition);
   if (intent.attributes.color) bits.push(intent.attributes.color);
 
-  const subject =
-    [intent.brand, intent.model].filter(Boolean).join(" ") ||
-    intent.productCategory ||
-    intent.query;
+  // Prefer the user's own product words: an inferred category is often a
+  // generalization ("football ball" → "sports equipment") and reads wrong.
+  const brandModel = [intent.brand, intent.model].filter(Boolean).join(" ");
+  const subject = brandModel || intent.searchQuery || intent.productCategory || intent.query;
   bits.push(subject);
 
   let sentence = `I'm looking for ${bits.join(" ")}`;

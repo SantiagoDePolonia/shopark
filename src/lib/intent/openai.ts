@@ -17,6 +17,9 @@ export type IntentParseOutcome = {
 
 const SYSTEM_PROMPT = `You convert a shopping request into structured JSON.
 Extract only facts stated by the user; never invent attributes.
+"productCategory" must stay SPECIFIC to what was asked ("football",
+"basketball shoes") — never a broad bucket like "sports equipment",
+"accessories", or "electronics".
 Also produce:
 - "searchQuery": ONLY the product keywords in English — spell number
   words as digits ("iphone sixteen" -> "iphone 16"), drop filler,

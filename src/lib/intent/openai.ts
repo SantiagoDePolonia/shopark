@@ -21,13 +21,20 @@ Extract only facts stated by the user; never invent attributes.
 "basketball shoes") — never a broad bucket like "sports equipment",
 "accessories", or "electronics".
 Also produce:
-- "searchQuery": ONLY the product keywords in English — spell number
-  words as digits ("iphone sixteen" -> "iphone 16"), drop filler,
-  politeness, and ALL budget/price words ("bicycle under 1000 PLN" ->
-  "bicycle"). Keep brand, model, key attributes.
-- "localizedQuery": the same product keywords translated to Polish (the
-  target market), e.g. "sunglasses" -> "okulary przeciwsloneczne".
-  Never include prices or budget words here either.
+- "searchQuery": ONLY the most shopping-critical keywords in English:
+  brand, product type, model, defining attributes. Spell number words as
+  digits. Drop filler, politeness, verbs, budgets, delivery words —
+  those belong in their own fields, never in the keywords.
+  Examples:
+  - "I would like to order a bicycle" -> "bicycle"
+  - "search for the bicycle under one thousand plm" -> "bicycle"
+  - "iPhone sixteen pro with two five six gigs" -> "iphone 16 pro 256gb"
+  - "Find me new white basketball shoes in size 43 for up to 300 PLN
+    including delivery" -> "white basketball shoes"
+- "localizedQuery": exactly the same keywords translated to Polish (the
+  target market): "bicycle" -> "rower", "sunglasses" -> "okulary
+  przeciwsloneczne", "white basketball shoes" -> "biale buty do
+  koszykowki". Same rules: keywords only.
 Set "clarification" to ONE short question ONLY if a missing detail could
 materially change the result (size for shoes/clothing, budget currency,
 whether the budget includes delivery, new vs used, storage capacity).

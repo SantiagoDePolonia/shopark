@@ -46,16 +46,27 @@ export function isTrustedMerchant(name: string, domain?: string): boolean {
 /**
  * Google Shopping deep-links (`prds=catalogid:…`) break behind Google's
  * consent redirect — commas and nested encoding get mangled into a
- * "malformed request" page. Replace them with a plain product search,
- * which survives the consent flow on every device.
+ * "malformed request" page. Rewrite them to the canonical product page
+ * (simple params, consent-safe); fall back to a plain product search
+ * only when no product id can be recovered.
  */
-export function safeOfferUrl(rawUrl: string, title: string, merchant?: string): string {
+export function safeOfferUrl(
+  rawUrl: string,
+  title: string,
+  merchant?: string,
+  productId?: string,
+): string {
   try {
     const url = new URL(rawUrl);
     const isGoogle = /(^|\.)google\.[a-z.]+$/.test(url.hostname);
     const isFragileDeepLink =
       isGoogle && (url.searchParams.has("prds") || url.searchParams.has("ibp"));
     if (!isFragileDeepLink) return rawUrl;
+
+    const catalogId = productId ?? rawUrl.match(/catalogid:(\d+)/)?.[1];
+    if (catalogId && /^\d+$/.test(catalogId)) {
+      return `https://www.google.com/shopping/product/${catalogId}?gl=pl&hl=en`;
+    }
 
     const query = merchant ? `${title} ${merchant}` : title;
     return `https://www.google.com/search?q=${encodeURIComponent(query)}`;

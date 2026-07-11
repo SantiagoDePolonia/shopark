@@ -95,7 +95,7 @@ export function dfsItemToOffer(item: DfsItem, intent: ShoppingIntent, index: num
   if (price === undefined || !item.title) return null;
   const rawUrl = item.url || item.shopping_url;
   if (!rawUrl) return null;
-  const url = safeOfferUrl(rawUrl, item.title, item.seller);
+  const url = safeOfferUrl(rawUrl, item.title, item.seller, item.product_id);
 
   const rating = item.product_rating ?? item.rating ?? undefined;
   const titleSize = findSizeInTitle(item.title);

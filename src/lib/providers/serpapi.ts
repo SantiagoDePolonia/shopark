@@ -71,7 +71,7 @@ function toOffer(result: SerpShoppingResult, intent: ShoppingIntent, index: numb
 
   const rawUrl = result.link || result.product_link;
   if (!rawUrl) return null;
-  const url = safeOfferUrl(rawUrl, result.title, result.source);
+  const url = safeOfferUrl(rawUrl, result.title, result.source, result.product_id);
 
   const condition = result.second_hand_condition ? "used" : "new";
   const titleSize = extractSizeFromTitle(result.title);

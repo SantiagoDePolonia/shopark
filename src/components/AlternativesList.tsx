@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { useState } from "react";
 import { formatMoney, subtractMoney } from "@/lib/money";
-import { computeTotal } from "@/lib/pricing";
+import { computeTotal, currentPrice } from "@/lib/pricing";
 import type { Offer } from "@/lib/types";
 import { VerificationBadge } from "./VerificationBadge";
 
@@ -31,8 +31,9 @@ function AlternativeRow({ offer, winnerTotal }: { offer: Offer; winnerTotal?: nu
       </div>
       <div className="tnum shrink-0 text-right">
         <p className="font-display text-base font-bold text-ink-900">
-          {total !== undefined ? formatMoney(total, offer.pricing.currency) : "+ delivery"}
+          {formatMoney(total ?? currentPrice(offer), offer.pricing.currency)}
         </p>
+        {total === undefined && <p className="text-xs text-ink-400">+ delivery</p>}
         {diff !== undefined && diff > 0 && (
           <p className="text-xs text-ink-400">+{formatMoney(diff, offer.pricing.currency)}</p>
         )}

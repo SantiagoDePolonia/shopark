@@ -215,15 +215,6 @@ export default function Home() {
           >
             <Wordmark />
           </button>
-          {stage.kind === "result" && (
-            <span className="rounded-full bg-foam-100 px-3 py-1 text-xs text-ink-600">
-              {stage.result.mode === "demo"
-                ? "demo data"
-                : stage.result.mode === "hybrid"
-                  ? "live + demo data"
-                  : "live data"}
-            </span>
-          )}
         </div>
       </header>
 
@@ -310,10 +301,6 @@ export default function Home() {
               ))}
             </div>
 
-            <p className="mt-10 max-w-sm text-xs text-ink-400">
-              Voice is processed to understand your request and never stored. If the microphone is
-              unavailable, everything works by text too.
-            </p>
           </div>
         )}
 

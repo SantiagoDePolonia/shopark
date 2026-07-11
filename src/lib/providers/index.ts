@@ -16,14 +16,10 @@ function anyLiveProviderConfigured(): boolean {
 }
 
 export function resolveSearchMode(): SearchMode {
-  const mode = process.env.SEARCH_MODE;
-  if (mode === "live" || mode === "hybrid" || mode === "demo") {
-    // Live modes silently degrade to demo when no provider is configured,
-    // so the app always starts without credentials.
-    if (mode !== "demo" && !anyLiveProviderConfigured()) return "demo";
-    return mode;
-  }
-  return anyLiveProviderConfigured() ? "hybrid" : "demo";
+  // Real data only: demo offers are permanently disabled for searches.
+  // SEARCH_MODE is intentionally ignored; the demo provider remains only
+  // for tests, which request it explicitly.
+  return "live";
 }
 
 function liveProviders(): ShoppingProvider[] {

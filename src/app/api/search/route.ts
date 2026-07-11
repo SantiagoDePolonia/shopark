@@ -7,7 +7,6 @@ import { ShoppingIntentSchema } from "@/lib/types";
 
 const BodySchema = z.object({
   intent: ShoppingIntentSchema,
-  mode: z.enum(["live", "hybrid", "demo"]).optional(),
 });
 
 export async function POST(request: Request) {
@@ -20,7 +19,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await executeSearch(body.data.intent, { mode: body.data.mode });
+    const result = await executeSearch(body.data.intent);
     return NextResponse.json(result);
   } catch (error) {
     console.error("Search failed", error);

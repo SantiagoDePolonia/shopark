@@ -103,15 +103,8 @@ describe("safeOfferUrl", () => {
     const fragile =
       "https://google.pl/search?ibp=oshop&q=okulary&prds=catalogid:8135582137938117201,productid:750326640359415512";
     const fixed = safeOfferUrl(fragile, "Okulary Ray-Ban Aviator", "OpticalStore.pl");
-    expect(fixed).toBe("https://www.google.com/shopping/product/8135582137938117201?gl=pl&hl=en");
-  });
-
-  it("falls back to a plain search when no product id is recoverable", async () => {
-    const { safeOfferUrl } = await import("../providers/geo");
-    const fragile = "https://google.pl/search?ibp=oshop&q=okulary";
-    const fixed = safeOfferUrl(fragile, "Okulary Ray-Ban", "Shop.pl");
     expect(fixed).toBe(
-      `https://www.google.com/search?q=${encodeURIComponent("Okulary Ray-Ban Shop.pl")}`,
+      `https://www.google.com/search?q=${encodeURIComponent("Okulary Ray-Ban Aviator OpticalStore.pl")}&udm=28&gl=pl`,
     );
   });
 

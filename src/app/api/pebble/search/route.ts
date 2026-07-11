@@ -28,7 +28,10 @@ export async function POST(request: Request) {
 
     const proto = request.headers.get("x-forwarded-proto") ?? "http";
     const host = request.headers.get("host") ?? "localhost:3000";
-    const resultUrl = `${proto}://${host}/r/${result.searchId}`;
+    // The QR carries the request text so the page can survive a cold
+    // serverless instance (see /r/[id]). Kept short for QR scannability.
+    const query = encodeURIComponent(body.data.text.slice(0, 120));
+    const resultUrl = `${proto}://${host}/r/${result.searchId}?q=${query}`;
 
     if (!winner) {
       return NextResponse.json({

@@ -22,7 +22,9 @@ const BASE = "https://api.dataforseo.com/v3/merchant/google/products";
  * result. priority 2 (high) usually completes within a few seconds.
  */
 const POLL_INTERVAL_MS = 1_500;
-const TASK_BUDGET_MS = 20_000;
+// Keep the whole search snappy: a task that misses this window fails
+// gracefully and the other providers carry the result.
+const TASK_BUDGET_MS = 8_000;
 
 /** DataForSEO location codes for the countries the demo targets. */
 const LOCATION_CODES: Record<string, number> = {

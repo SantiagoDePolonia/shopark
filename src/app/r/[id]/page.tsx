@@ -5,6 +5,8 @@ import { Wordmark } from "@/components/Logo";
 import { VerificationBadge } from "@/components/VerificationBadge";
 import { formatMoney } from "@/lib/money";
 import { computeTotal, currentPrice, knownShipping } from "@/lib/pricing";
+import { parseIntent } from "@/lib/intent/openai";
+import { executeSearch } from "@/lib/search/orchestrator";
 import { getSearch } from "@/lib/search/store";
 import type { Offer } from "@/lib/types";
 
@@ -39,9 +41,24 @@ function PriceRows({ offer }: { offer: Offer }) {
   );
 }
 
-export default async function WatchResultPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function WatchResultPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ q?: string }>;
+}) {
   const { id } = await params;
-  const result = getSearch(id);
+  const { q } = await searchParams;
+
+  // The store is per-instance memory: on serverless it can miss. The QR
+  // carries the original request text, so a miss re-runs the same
+  // deterministic pipeline instead of 404ing.
+  let result = getSearch(id);
+  if (!result && q) {
+    const { intent } = await parseIntent(q.slice(0, 200));
+    result = await executeSearch(intent);
+  }
   if (!result) notFound();
 
   const winner = result.winner;

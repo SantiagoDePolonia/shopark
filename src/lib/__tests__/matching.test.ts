@@ -99,3 +99,48 @@ describe("productIdentity", () => {
     expect(productIdentity(a)).toBe(productIdentity(b));
   });
 });
+
+describe("liberal matching improvements", () => {
+  it("folds Polish ł and diacritics in tokens", () => {
+    expect(titleSimilarity("okulary przeciwsloneczne", "Okulary Przeciwsłoneczne Damskie")).toBe(1);
+  });
+
+  it("rejects a different model generation", () => {
+    const intent = makeIntent({
+      query: "iPhone sixteen",
+      searchQuery: "iphone 16",
+      attributes: {},
+      budget: undefined,
+    });
+    const offer = makeOffer({
+      title: "Apple iPhone 14 Dual SIM iOS 16 5G",
+      brand: "Apple",
+      model: undefined,
+      price: 1200,
+      attributes: {},
+    });
+    const result = matchOffer(intent, offer);
+    expect(result.rejectionReason).toMatch(/iphone 14/i);
+  });
+
+  it("matches the local-language title via localizedQuery", () => {
+    const intent = makeIntent({
+      query: "Sunglasses",
+      searchQuery: "sunglasses",
+      localizedQuery: "okulary przeciwsloneczne",
+      productCategory: "accessories",
+      attributes: {},
+      budget: undefined,
+    });
+    const offer = makeOffer({
+      title: "Okulary przeciwsłoneczne Ray-Ban Aviator",
+      brand: undefined,
+      model: undefined,
+      price: 300,
+      attributes: {},
+    });
+    const result = matchOffer(intent, offer);
+    expect(result.rejectionReason).toBeUndefined();
+    expect(result.score).toBeGreaterThan(0.3);
+  });
+});

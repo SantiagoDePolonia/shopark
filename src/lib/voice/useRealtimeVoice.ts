@@ -21,6 +21,8 @@ export type VoiceSearchHandler = (intent: ShoppingIntent) => Promise<{
 
 type ToolArgs = {
   query: string;
+  searchQuery?: string;
+  localizedQuery?: string;
   brand?: string;
   model?: string;
   productCategory?: string;
@@ -36,6 +38,8 @@ type ToolArgs = {
 export function intentFromToolArgs(args: ToolArgs): ShoppingIntent {
   return {
     query: args.query,
+    searchQuery: args.searchQuery,
+    localizedQuery: args.localizedQuery,
     brand: args.brand,
     model: args.model,
     productCategory: args.productCategory,

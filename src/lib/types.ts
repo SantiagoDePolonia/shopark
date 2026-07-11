@@ -9,6 +9,11 @@ export const ConditionSchema = z.enum(["new", "used", "refurbished"]);
 export const ShoppingIntentSchema = z.object({
   query: z.string().min(1),
 
+  /** Normalized search keywords: number words → digits, filler stripped. */
+  searchQuery: z.string().optional(),
+  /** The search keywords translated to the market language (Polish). */
+  localizedQuery: z.string().optional(),
+
   productCategory: z.string().optional(),
   brand: z.string().optional(),
   model: z.string().optional(),

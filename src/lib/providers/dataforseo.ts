@@ -190,7 +190,7 @@ export const dataForSeoProvider: ShoppingProvider = {
     // 1. Create the task at high priority.
     const posted = await dfsFetch(key, `${BASE}/task_post`, [
       {
-        keyword: intent.query,
+        keyword: intent.localizedQuery ?? intent.searchQuery ?? intent.query,
         location_code: locationCode,
         language_code: "en",
         depth: 40,

@@ -44,6 +44,14 @@ export const SEARCH_TOOL_DEFINITION = {
         type: "string",
         description: "The full shopping request in natural language, e.g. 'new white basketball shoes size 43 under 300 PLN delivered'",
       },
+      searchQuery: {
+        type: "string",
+        description: "Clean search keywords in English, number words as digits (e.g. 'iphone 16')",
+      },
+      localizedQuery: {
+        type: "string",
+        description: "The search keywords translated to Polish, e.g. 'okulary przeciwsloneczne'",
+      },
       brand: { type: "string", description: "Brand if the user specified one" },
       model: { type: "string", description: "Model if the user specified one" },
       productCategory: { type: "string", description: "Product category, e.g. 'basketball shoes'" },

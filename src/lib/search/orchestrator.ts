@@ -18,6 +18,9 @@ import { saveSearch } from "./store";
 
 export type ProgressReporter = (message: string) => void;
 
+/** Floor for the liberal fallback when nothing clears MATCH_THRESHOLD. */
+const LIBERAL_THRESHOLD = 0.12;
+
 /**
  * Hybrid mode: demo offers are a safety net, never padding.
  * - Any usable live match hides ALL demo offers.
@@ -63,6 +66,7 @@ export async function executeSearch(
   report("Comparing offers against your requirements…");
   let matched: Offer[] = [];
   let rejected: Offer[] = [];
+  const nearMisses: Offer[] = [];
   for (const raw of discovered) {
     const match = matchOffer(intent, raw);
     const offer = { ...raw, match };
@@ -70,8 +74,19 @@ export async function executeSearch(
       rejected.push(offer);
     } else if (match.score >= MATCH_THRESHOLD) {
       matched.push(offer);
+    } else if (match.score >= LIBERAL_THRESHOLD) {
+      nearMisses.push(offer);
     }
-    // Below-threshold, non-rejected offers are dropped as noise.
+    // Anything below the liberal floor is dropped as noise.
+  }
+
+  // Liberal fallback: an empty result helps nobody. When nothing clears
+  // the strict threshold, surface the closest non-rejected candidates —
+  // hard rejections (wrong size, wrong condition…) stay rejected.
+  if (matched.length === 0 && nearMisses.length > 0) {
+    nearMisses.sort((a, b) => b.match.score - a.match.score);
+    matched = nearMisses.slice(0, 10);
+    report("No exact matches — showing the closest offers…");
   }
 
   if (mode === "hybrid") {

@@ -1,6 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { Wordmark } from "@/components/Logo";
 import { VerificationBadge } from "@/components/VerificationBadge";
 import { formatMoney } from "@/lib/money";
@@ -16,6 +15,7 @@ import type { Offer } from "@/lib/types";
  */
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 function PriceRows({ offer }: { offer: Offer }) {
   const shipping = knownShipping(offer);
@@ -59,7 +59,27 @@ export default async function WatchResultPage({
     const { intent } = await parseIntent(q.slice(0, 200));
     result = await executeSearch(intent);
   }
-  if (!result) notFound();
+  if (!result) {
+    // Old link without the embedded query: explain instead of a bare 404.
+    return (
+      <div className="mx-auto w-full max-w-md flex-1 px-5 pb-12">
+        <header className="py-4">
+          <Link href="/">
+            <Wordmark />
+          </Link>
+        </header>
+        <div className="pt-16 text-center">
+          <p className="font-display text-2xl font-semibold">This result has expired</p>
+          <p className="mt-3 text-ink-600">
+            Results are kept briefly. Run the search again to get a fresh, verified offer.
+          </p>
+          <Link href="/" className="mt-8 inline-block rounded-control bg-ink-900 px-6 py-3 font-medium text-white">
+            Search on ShopArk
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const winner = result.winner;
   const isConfirmed =

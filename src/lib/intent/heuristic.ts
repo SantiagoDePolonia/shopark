@@ -15,6 +15,29 @@ const KNOWN_BRANDS = [
   "sennheiser", "samsung", "sandisk", "kingston", "apple", "xiaomi", "lenovo",
 ];
 
+const NUMBER_WORDS: Record<string, string> = {
+  one: "1", two: "2", three: "3", four: "4", five: "5", six: "6",
+  seven: "7", eight: "8", nine: "9", ten: "10", eleven: "11",
+  twelve: "12", thirteen: "13", fourteen: "14", fifteen: "15",
+  sixteen: "16", seventeen: "17", eighteen: "18", nineteen: "19",
+  twenty: "20",
+};
+
+/** "iphone sixteen pro" → "iphone 16 pro"; strips filler and punctuation. */
+export function normalizeSearchQuery(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/\b(find me|find|please|looking for|i want|i need|show me)\b/g, " ")
+    .split(/\s+/)
+    .map((w) => {
+      const bare = w.replace(/[.,!?;:]+$/g, "");
+      return NUMBER_WORDS[bare] ?? bare;
+    })
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+}
+
 export function parseIntentHeuristically(text: string): ShoppingIntent {
   const lower = text.toLowerCase();
 
@@ -50,6 +73,7 @@ export function parseIntentHeuristically(text: string): ShoppingIntent {
 
   return {
     query: text.trim(),
+    searchQuery: normalizeSearchQuery(text),
     brand: brand ? capitalize(brand) : undefined,
     attributes: {
       ...(sizeMatch ? { size: sizeMatch[1].replace(",", ".") } : {}),

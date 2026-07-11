@@ -17,6 +17,12 @@ export type IntentParseOutcome = {
 
 const SYSTEM_PROMPT = `You convert a shopping request into structured JSON.
 Extract only facts stated by the user; never invent attributes.
+Also produce:
+- "searchQuery": clean product search keywords in English — spell number
+  words as digits ("iphone sixteen" -> "iphone 16"), drop filler/politeness,
+  keep brand, model, key attributes.
+- "localizedQuery": the same keywords translated to Polish (the target
+  market), e.g. "sunglasses" -> "okulary przeciwsloneczne".
 Set "clarification" to ONE short question ONLY if a missing detail could
 materially change the result (size for shoes/clothing, budget currency,
 whether the budget includes delivery, new vs used, storage capacity).
@@ -31,6 +37,8 @@ const JSON_SCHEMA = {
     additionalProperties: false,
     properties: {
       query: { type: "string" },
+      searchQuery: { type: ["string", "null"] },
+      localizedQuery: { type: ["string", "null"] },
       productCategory: { type: ["string", "null"] },
       brand: { type: ["string", "null"] },
       model: { type: ["string", "null"] },
@@ -59,12 +67,14 @@ const JSON_SCHEMA = {
       },
       clarification: { type: ["string", "null"] },
     },
-    required: ["query", "productCategory", "brand", "model", "attributes", "budget", "clarification"],
+    required: ["query", "searchQuery", "localizedQuery", "productCategory", "brand", "model", "attributes", "budget", "clarification"],
   },
 } as const;
 
 type RawExtraction = {
   query: string;
+  searchQuery: string | null;
+  localizedQuery: string | null;
   productCategory: string | null;
   brand: string | null;
   model: string | null;
@@ -110,6 +120,8 @@ export async function parseIntent(text: string, priorContext?: string): Promise<
 
     const intent = ShoppingIntentSchema.parse({
       query: raw.query || text,
+      searchQuery: raw.searchQuery ?? undefined,
+      localizedQuery: raw.localizedQuery ?? undefined,
       productCategory: raw.productCategory ?? undefined,
       brand: raw.brand ?? undefined,
       model: raw.model ?? undefined,

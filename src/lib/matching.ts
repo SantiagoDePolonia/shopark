@@ -20,6 +20,8 @@ const CAPACITY_KEYS = ["capacity", "storage", "storageCapacity"];
 export function normalizeToken(value: string): string {
   return value
     .toLowerCase()
+    // NFD strips combining diacritics, but Polish ł/Ł has no decomposition.
+    .replace(/ł/g, "l")
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z0-9]+/g, " ")
@@ -105,9 +107,40 @@ export function titleSimilarity(query: string, title: string): number {
   return hits / queryTokens.size;
 }
 
+/**
+ * Detect a model-generation conflict: the query names "<word> <number>"
+ * ("iphone 16", "playstation 5") but the title pairs the same word with
+ * a different number ("iphone 14"). Deterministic, language-agnostic.
+ */
+export function modelNumberConflict(queries: string[], title: string): string | null {
+  const titleNorm = normalizeToken(title);
+  for (const q of queries) {
+    for (const m of normalizeToken(q).matchAll(/([a-z]{3,})\s+(\d{1,3})\b/g)) {
+      const word = m[1];
+      const num = m[2];
+      const inTitle = titleNorm.match(new RegExp(`\\b${word}\\s+(\\d{1,3})\\b`));
+      if (inTitle && inTitle[1] !== num) return `${word} ${inTitle[1]}`;
+    }
+  }
+  return null;
+}
+
 export function matchOffer(intent: ShoppingIntent, offer: Offer): MatchResult {
   const reasons: string[] = [];
   let satisfiedCritical = 0;
+
+  const queryVariants = [intent.query, intent.searchQuery, intent.localizedQuery].filter(
+    (v): v is string => Boolean(v),
+  );
+
+  const conflictingModel = modelNumberConflict(queryVariants, offer.product.title);
+  if (conflictingModel) {
+    return {
+      score: 0,
+      reasons: [],
+      rejectionReason: `The offer is for ${conflictingModel}, a different model generation`,
+    };
+  }
 
   /* ---- critical attributes: hard rejections first ---- */
 
@@ -216,8 +249,11 @@ export function matchOffer(intent: ShoppingIntent, offer: Offer): MatchResult {
     }
   }
 
-  const cleaned = cleanQuery(intent.query) || intent.query;
-  const similarity = titleSimilarity(cleaned, offer.product.title);
+  // Compare the title against every query variant we have (original,
+  // normalized, Polish) and keep the best score — listings in the local
+  // market language must not be penalized.
+  const variants = queryVariants.map((v) => cleanQuery(v) || v);
+  const similarity = Math.max(...variants.map((v) => titleSimilarity(v, offer.product.title)));
   score += similarity * 0.4;
   score += Math.min(satisfiedCritical, 4) * 0.12;
   if (sizeUnconfirmed) score -= 0.3;
@@ -231,15 +267,19 @@ export function matchOffer(intent: ShoppingIntent, offer: Offer): MatchResult {
       score += 0.15;
       reasons.push("Category matches");
     } else {
-      // No category evidence at all: require the category's defining words
-      // in the title, otherwise treat the offer as off-category noise.
+      // Off-category penalty — but only when the user actually said the
+      // category. An LLM-inferred label ("accessories") naturally never
+      // appears in titles and must not sink every offer.
+      const userStatedCategory = normalizeToken(intent.query).includes(
+        normalizeToken(intent.productCategory),
+      );
       const categoryTokens = normalizeToken(intent.productCategory)
         .split(" ")
         .filter((t) => t.length > 2);
       const titleNorm = normalizeToken(offer.product.title);
       const inTitle =
         categoryTokens.length > 0 && categoryTokens.every((t) => titleNorm.includes(t));
-      if (!inTitle && !offer.product.category) score -= 0.15;
+      if (userStatedCategory && !inTitle && !offer.product.category) score -= 0.15;
     }
   }
 

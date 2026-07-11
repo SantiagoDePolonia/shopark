@@ -44,9 +44,12 @@ export function serpApiConfigured(): boolean {
 }
 
 function buildQuery(intent: ShoppingIntent): string {
-  const parts = [intent.query];
+  // Prefer the Polish query for the Polish market, then the normalized
+  // one; Google matches Polish listings far better in Polish.
+  const base = intent.localizedQuery ?? intent.searchQuery ?? intent.query;
+  const parts = [base];
   const size = intent.attributes.size;
-  if (size && !intent.query.toLowerCase().includes(size.toLowerCase())) parts.push(`size ${size}`);
+  if (size && !base.toLowerCase().includes(size.toLowerCase())) parts.push(`rozmiar ${size}`);
   return parts.join(" ");
 }
 

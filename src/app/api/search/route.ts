@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+
+export const maxDuration = 60;
 import { z } from "zod";
 import { executeSearch } from "@/lib/search/orchestrator";
 import { ShoppingIntentSchema } from "@/lib/types";

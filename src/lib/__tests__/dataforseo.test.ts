@@ -96,3 +96,23 @@ describe("DataForSEO response parsing", () => {
     expect(outcome.error).toBeUndefined();
   });
 });
+
+describe("safeOfferUrl", () => {
+  it("replaces fragile Google Shopping deep-links with a plain search", async () => {
+    const { safeOfferUrl } = await import("../providers/geo");
+    const fragile =
+      "https://google.pl/search?ibp=oshop&q=okulary&prds=catalogid:8135582137938117201,productid:750326640359415512";
+    const fixed = safeOfferUrl(fragile, "Okulary Ray-Ban Aviator", "OpticalStore.pl");
+    expect(fixed).toBe(
+      `https://www.google.com/search?q=${encodeURIComponent("Okulary Ray-Ban Aviator OpticalStore.pl")}`,
+    );
+  });
+
+  it("leaves direct merchant URLs untouched", async () => {
+    const { safeOfferUrl } = await import("../providers/geo");
+    const direct = "https://sportoutlet.pl/nike-court-vision-low?variant=43";
+    expect(safeOfferUrl(direct, "Nike", "SportOutlet")).toBe(direct);
+    const plainGoogle = "https://www.google.com/search?q=nike+shoes";
+    expect(safeOfferUrl(plainGoogle, "Nike", "X")).toBe(plainGoogle);
+  });
+});

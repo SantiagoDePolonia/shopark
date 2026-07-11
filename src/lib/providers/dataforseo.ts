@@ -1,5 +1,5 @@
 import { findSizeInTitle } from "../matching";
-import { isTrustedMerchant, targetingFor } from "./geo";
+import { isTrustedMerchant, safeOfferUrl, targetingFor } from "./geo";
 import type {
   Offer,
   ProviderSearchResult,
@@ -93,8 +93,9 @@ function deliveryAmount(item: DfsItem): number | undefined {
 export function dfsItemToOffer(item: DfsItem, intent: ShoppingIntent, index: number): Offer | null {
   const price = priceAmount(item.price);
   if (price === undefined || !item.title) return null;
-  const url = item.url || item.shopping_url;
-  if (!url) return null;
+  const rawUrl = item.url || item.shopping_url;
+  if (!rawUrl) return null;
+  const url = safeOfferUrl(rawUrl, item.title, item.seller);
 
   const rating = item.product_rating ?? item.rating ?? undefined;
   const titleSize = findSizeInTitle(item.title);

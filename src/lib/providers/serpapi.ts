@@ -1,5 +1,5 @@
 import { parsePrice } from "../money";
-import { isTrustedMerchant, targetingFor } from "./geo";
+import { isTrustedMerchant, safeOfferUrl, targetingFor } from "./geo";
 import type {
   Offer,
   ProviderSearchResult,
@@ -69,8 +69,9 @@ function toOffer(result: SerpShoppingResult, intent: ShoppingIntent, index: numb
   const price = result.extracted_price ?? parsePrice(result.price ?? "")?.amount;
   if (price === undefined || !result.title) return null;
 
-  const url = result.link || result.product_link;
-  if (!url) return null;
+  const rawUrl = result.link || result.product_link;
+  if (!rawUrl) return null;
+  const url = safeOfferUrl(rawUrl, result.title, result.source);
 
   const condition = result.second_hand_condition ? "used" : "new";
   const titleSize = extractSizeFromTitle(result.title);

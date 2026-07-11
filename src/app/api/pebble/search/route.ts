@@ -29,6 +29,11 @@ export async function OPTIONS() {
   return new Response(null, { status: 204, headers: CORS_HEADERS });
 }
 
+/** Health probe for the watch bridge's connectivity diagnostics. */
+export async function GET() {
+  return NextResponse.json({ ok: true }, { headers: CORS_HEADERS });
+}
+
 export async function POST(request: Request) {
   const body = BodySchema.safeParse(await request.json().catch(() => null));
   if (!body.success) {

@@ -11,6 +11,13 @@ import { formatMoney } from "@/lib/money";
 import { computeTotal } from "@/lib/pricing";
 import type { SearchResult, ShoppingIntent } from "@/lib/types";
 import { useRealtimeVoice } from "@/lib/voice/useRealtimeVoice";
+import { useSimpleVoice } from "@/lib/voice/useSimpleVoice";
+
+/**
+ * "simple" (default): record → Whisper → normal text flow, TTS replies.
+ * "realtime": the OpenAI Realtime WebRTC agent.
+ */
+const VOICE_MODE = process.env.NEXT_PUBLIC_VOICE_MODE === "realtime" ? "realtime" : "simple";
 
 const EXAMPLE_PROMPTS = [
   "Find me new white basketball shoes in size 43 under 300 PLN delivered.",
@@ -43,6 +50,8 @@ export default function Home() {
   const [transcript, setTranscript] = useState<TranscriptLine[]>([]);
   const [progressMessages, setProgressMessages] = useState<string[]>([]);
   const progressTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  /** True while the current request came in by voice → replies are spoken. */
+  const voiceSession = useRef(false);
 
   const startProgressTicker = useCallback(() => {
     setProgressMessages([SEARCH_STEPS[0]]);
@@ -76,6 +85,7 @@ export default function Home() {
         const result = (await response.json()) as SearchResult;
         stopProgressTicker();
         setStage({ kind: "result", result });
+        if (VOICE_MODE === "simple" && voiceSession.current) void speakRef.current?.(result.summary);
         return result;
       } catch {
         stopProgressTicker();
@@ -104,8 +114,11 @@ export default function Home() {
       };
       if (data.clarification && !priorContext) {
         setStage({ kind: "clarifying", question: data.clarification, originalText: requestText });
+        if (VOICE_MODE === "simple" && voiceSession.current) void speakRef.current?.(data.clarification);
       } else {
         setStage({ kind: "confirming", intent: data.intent, confirmation: data.confirmation });
+        if (VOICE_MODE === "simple" && voiceSession.current)
+          void speakRef.current?.(`${data.confirmation} Tap yes to search.`);
       }
     } catch {
       setStage({ kind: "error", message: "Could not understand the request. Please try again." });
@@ -113,6 +126,19 @@ export default function Home() {
   }, []);
 
   /* ---------------- voice ---------------- */
+
+  const speakRef = useRef<((text: string) => Promise<void>) | null>(null);
+
+  const simpleVoice = useSimpleVoice({
+    onTranscript: (text) => {
+      voiceSession.current = true;
+      setTranscript((t) => [...t, { role: "you", text }]);
+      setText(text);
+      void parseAndProceed(text);
+    },
+    onError: (message) => setNotice(message),
+  });
+  speakRef.current = simpleVoice.speak;
 
   const voice = useRealtimeVoice({
     onSearch: async (intent) => {
@@ -131,15 +157,31 @@ export default function Home() {
   });
 
   const micState: MicState =
-    voice.state === "connecting"
-      ? "connecting"
-      : voice.state === "listening"
+    VOICE_MODE === "simple"
+      ? simpleVoice.state === "recording"
         ? "listening"
-        : voice.state === "speaking"
-          ? "speaking"
-          : "idle";
+        : simpleVoice.state === "transcribing"
+          ? "connecting"
+          : "idle"
+      : voice.state === "connecting"
+        ? "connecting"
+        : voice.state === "listening"
+          ? "listening"
+          : voice.state === "speaking"
+            ? "speaking"
+            : "idle";
 
   const handleMic = () => {
+    if (VOICE_MODE === "simple") {
+      setNotice(null);
+      if (simpleVoice.state === "recording") {
+        simpleVoice.stop();
+      } else if (simpleVoice.state === "idle") {
+        setTranscript([]);
+        void simpleVoice.start();
+      }
+      return;
+    }
     if (voice.state === "listening" || voice.state === "speaking") {
       voice.stop();
     } else {
@@ -151,6 +193,8 @@ export default function Home() {
 
   const restart = () => {
     voice.stop();
+    simpleVoice.stop();
+    voiceSession.current = false;
     stopProgressTicker();
     setStage({ kind: "home" });
     setText("");
@@ -195,11 +239,15 @@ export default function Home() {
               <MicButton state={micState} onClick={handleMic} />
               <p className="mt-3 text-sm text-ink-400">
                 {micState === "listening"
-                  ? "Listening… speak naturally"
+                  ? VOICE_MODE === "simple"
+                    ? "Recording… tap to finish"
+                    : "Listening… speak naturally"
                   : micState === "speaking"
                     ? "ShopArk is speaking…"
                     : micState === "connecting"
-                      ? "Connecting…"
+                      ? VOICE_MODE === "simple"
+                        ? "Understanding…"
+                        : "Connecting…"
                       : "Tap to speak"}
               </p>
             </div>
@@ -229,6 +277,7 @@ export default function Home() {
               className="mt-10 flex w-full max-w-md gap-2"
               onSubmit={(e) => {
                 e.preventDefault();
+                voiceSession.current = false;
                 if (text.trim()) void parseAndProceed(text.trim());
               }}
             >
